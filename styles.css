@@ -9,6 +9,7 @@
   --accent: #f2a93b;
   --accent-ink: #2b1b00;
   --brand: #1f6b4f;
+  --brand-soft: #d3eedf;
   --red: #c62f3a;
   --black: #1c1f24;
   --card: #fffdf8;
@@ -27,6 +28,7 @@
     --muted: #9db0a7;
     --line: #2b3a33;
     --brand: #f2a93b;
+    --brand-soft: #1e4a39;
     --shadow: 0 6px 18px rgba(0, 0, 0, .45);
     color-scheme: dark;
   }
@@ -235,6 +237,56 @@ body.playing .log { max-height: none; flex: 1; min-height: 0; }
   .log { font-size: .8rem; }
   .opp-hand { min-height: 50px; overflow: hidden; }
 }
+/* Chat */
+.chat-btn {
+  margin-left: auto; position: relative; display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.25);
+  border-radius: 999px; padding: 5px 13px; font-weight: 700; font-size: .9rem;
+}
+.badge {
+  position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+  background: var(--red); color: #fff; font-size: .72rem; font-weight: 800; display: grid; place-items: center;
+  box-shadow: 0 0 0 2px var(--felt-dark); animation: pop .3s ease;
+}
+.chat-sheet {
+  position: fixed; z-index: 28; left: 0; right: 0; bottom: 0; height: min(72dvh, 560px);
+  display: flex; flex-direction: column; background: var(--panel); color: var(--ink);
+  border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.3);
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)); animation: sheet-up .22s ease;
+}
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } }
+@media (min-width: 700px) {
+  .chat-sheet { left: auto; right: 16px; bottom: 16px; width: 360px; height: min(70dvh, 540px); border-radius: 18px; border: 1px solid var(--line); }
+}
+.chat-head { display: flex; align-items: center; justify-content: space-between; }
+.chat-head h2 { margin: 0; font: 700 1.25rem/1 Fredoka, "Avenir Next Rounded", system-ui, sans-serif; }
+.chat-list {
+  list-style: none; margin: 8px 0; padding: 4px 2px; flex: 1; min-height: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 6px; overscroll-behavior: contain;
+}
+.chat-empty { margin: auto; color: var(--muted); }
+.msg {
+  align-self: flex-start; max-width: 80%; background: var(--bg); border: 1px solid var(--line);
+  border-radius: 16px 16px 16px 4px; padding: 6px 11px 4px;
+}
+.msg.mine { align-self: flex-end; background: var(--brand-soft); border-color: transparent; border-radius: 16px 16px 4px 16px; }
+.msg .who { display: block; font-size: .7rem; font-weight: 700; color: var(--muted); }
+.msg p { margin: 1px 0; overflow-wrap: anywhere; }
+.msg time { display: block; text-align: right; font-size: .65rem; color: var(--muted); }
+.msg.big p { font-size: 2rem; line-height: 1.15; }
+.chat-quick { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+.chat-quick::-webkit-scrollbar { display: none; }
+.quick { flex: none; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 5px 12px; font-size: .95rem; }
+.chat-form { display: flex; gap: 8px; }
+.chat-form input { flex: 1; min-width: 0; }
+.chat-bubble {
+  position: fixed; z-index: 27; top: calc(env(safe-area-inset-top, 0px) + 116px); right: 14px;
+  max-width: min(78vw, 320px); text-align: left; font: inherit; font-weight: 600;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 16px 4px 16px 16px;
+  padding: 9px 13px; box-shadow: var(--shadow); animation: pop .3s ease; overflow-wrap: anywhere;
+}
+@media (max-width: 520px) { .chat-btn .lbl { display: none; } .chat-btn { padding: 5px 11px; } }
+
 /* Narrow phones: keep just the fish logo while playing so the buttons fit */
 @media (max-width: 420px) {
   body.playing .wordmark { display: none; }

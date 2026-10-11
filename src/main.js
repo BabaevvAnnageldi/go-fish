@@ -2,7 +2,8 @@ import { createGame, applyAction, viewFor, GameError, RANKS } from './engine.js'
 import { HostSession, GuestSession, randomCode, normalizeCode } from './net.js';
 import { canSeat, seatId } from './seat.js';
 import { $, showScreen, showToast, setStatus, renderTable, resetHandMemory, rankName } from './ui.js';
-import { soundOn, setSound, unlock as unlockAudio } from './sound.js';
+import { soundOn, setSound, unlock as unlockAudio, playPop } from './sound.js';
+import { cleanText, isValidMessage, makeMessage, appendMessage, renderChat, renderQuick } from './chat.js';
 import { animateDraws, buzz, canFullscreen, enterFullscreen, exitFullscreen, isFullscreen, isPhone, isStandalone, keepAwake } from './fx.js';
 
 const SESSION_KEY = 'gofish:session';
@@ -35,6 +36,10 @@ let hostRetries = 0;
 let guestId = null;   // host only: clientId of the seated guest
 let reclaimTimer = null; // host only: pending 'Reclaiming room…' retry
 let reclaiming = false;  // host only: the room code is committed (resumed or registered), so retry it, never pick a new one
+let chat = [];           // chat history (host is authoritative, guest mirrors it)
+let chatOpen = false;
+let unread = 0;
+let bubbleTimer = null;
 let myClientId = null;   // cached so it stays stable for the page even if localStorage throws
 
 // ---------- Rendering ----------
@@ -104,6 +109,7 @@ function startHost(resume) {
   if (resume) {
     const saved = store.get('localStorage', hostKey(session.code));
     if (saved?.game) ({ game, guestId = null } = saved);
+    if (Array.isArray(saved?.chat)) chat = saved.chat.filter(isValidMessage);
   }
   net = new HostSession({ code: session.code, onMessage: onGuestMessage, onStatus, canSeat: (hello) => canSeat(guestId, hello) });
   net.start();
@@ -143,12 +149,24 @@ function onGuestMessage(msg) {
     if (!game) newGame(guestName, 0);
     else game = { ...game, players: [game.players[0], { ...game.players[1], name: guestName }] };
     broadcast();
+    net.send({ type: 'chat-history', messages: chat });
   } else if (msg.type === 'action') {
     if (!game) return;
     act(1, msg.rank);
   } else if (msg.type === 'rematch') {
     if (game?.phase === 'over') rematch();
+  } else if (msg.type === 'chat') {
+    const text = cleanText(msg.text);
+    if (text && game) hostPost(1, text);
   }
+}
+
+function hostPost(from, text) {
+  const m = makeMessage(chat, from, text);
+  chat = appendMessage(chat, m);
+  persist();
+  net.send({ type: 'chat', message: m });
+  showChat(m);
 }
 
 function newGame(guestName, starter) {
@@ -167,8 +185,12 @@ function rematch() {
   broadcast();
 }
 
+function persist() {
+  store.set('localStorage', hostKey(session.code), { game, guestId, chat });
+}
+
 function broadcast() {
-  store.set('localStorage', hostKey(session.code), { game, guestId });
+  persist();
   net.send({ type: 'view', view: viewFor(game, 1) });
   setView(viewFor(game, 0));
 }
@@ -205,6 +227,16 @@ function startGuest() {
       if (msg.type === 'view' && msg.view && Array.isArray(msg.view.hand)) {
         if (view && msg.view.seq < view.seq) { lastSeq = 0; resetHandMemory(); } // rematch started
         setView(msg.view);
+      } else if (msg.type === 'chat-history' && Array.isArray(msg.messages)) {
+        const lastId = chat.at(-1)?.id ?? 0;
+        chat = msg.messages.filter(isValidMessage).slice(-100);
+        const fresh = chat.filter((m) => m.id > lastId && m.from !== 1);
+        if (!chatOpen && lastId > 0) unread += fresh.length; // after a page refresh, old history isn't "new"
+        refreshChat();
+      } else if (msg.type === 'chat' && isValidMessage(msg.message)) {
+        if (msg.message.id <= (chat.at(-1)?.id ?? 0)) return;
+        chat = appendMessage(chat, msg.message);
+        showChat(msg.message);
       } else if (msg.type === 'error') {
         showToast(String(msg.message ?? 'Error'), 'info');
       } else if (msg.type === 'full') {
@@ -237,6 +269,60 @@ function askSelected() {
 function playAgain() {
   if (session.role === 'host') rematch();
   else net.send({ type: 'rematch' });
+}
+
+// ---------- Chat ----------
+
+const myIndex = () => (session?.role === 'host' ? 0 : 1);
+
+function refreshChat() {
+  if (view) renderChat(chat, { you: myIndex(), names: view.names });
+  $('chatBadge').textContent = unread > 9 ? '9+' : String(unread);
+  $('chatBadge').hidden = unread === 0;
+}
+
+// A message was added to `chat`: render it, and nudge the reader if it's from the opponent.
+function showChat(m) {
+  if (m.from !== myIndex()) {
+    if (!chatOpen) {
+      unread += 1;
+      const b = $('chatBubble');
+      b.textContent = `${view?.names[m.from] ?? 'Opponent'}: ${m.text}`;
+      b.hidden = false;
+      clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => { b.hidden = true; }, 4000);
+    }
+    playPop();
+    buzz(20);
+  }
+  refreshChat();
+}
+
+function sendChat(raw) {
+  const text = cleanText(raw);
+  if (!text || !session) return false;
+  if (session.role === 'host') {
+    if (!game) return false;
+    hostPost(0, text);
+  } else {
+    if (!net?.conn?.open) { showToast('Not connected — message not sent', 'info'); return false; }
+    net.send({ type: 'chat', text });
+  }
+  return true;
+}
+
+function openChat() {
+  chatOpen = true;
+  unread = 0;
+  $('chat').hidden = false;
+  $('chatBubble').hidden = true;
+  refreshChat();
+  if (!isPhone()) $('chatInput').focus();
+}
+
+function closeChat() {
+  chatOpen = false;
+  $('chat').hidden = true;
 }
 
 function clientId() {
@@ -288,6 +374,9 @@ function leave() {
   reclaiming = false;
   resetHandMemory();
   keepAwake(false);
+  chat = [];
+  unread = 0;
+  closeChat();
   $('overlay').hidden = true;
   setStatus(null);
   showScreen('lobby');
@@ -318,7 +407,7 @@ function boot() {
     }
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') $('rules').hidden = $('install').hidden = true;
+    if (e.key === 'Escape') { $('rules').hidden = $('install').hidden = true; closeChat(); }
   });
   $('fsBtn').hidden = isStandalone();
   $('fsBtn').addEventListener('click', () => {
@@ -333,6 +422,20 @@ function boot() {
   };
   showSound();
   $('soundBtn').addEventListener('click', () => { setSound(!soundOn()); showSound(); });
+  $('chatBtn').addEventListener('click', () => (chatOpen ? closeChat() : openChat()));
+  $('overChatBtn').addEventListener('click', openChat);
+  $('chatBubble').addEventListener('click', openChat);
+  $('chatClose').addEventListener('click', closeChat);
+  $('chatForm').addEventListener('submit', (e) => {
+    e.preventDefault?.();
+    if (sendChat($('chatInput').value)) $('chatInput').value = '';
+  });
+  renderQuick((q) => sendChat(q));
+  // iPhone: keep the chat sheet above the on-screen keyboard.
+  const vv = globalThis.visualViewport;
+  const lift = () => { $('chat').style.bottom = `${Math.max(0, innerHeight - vv.height - vv.offsetTop)}px`; };
+  vv?.addEventListener('resize', lift);
+  vv?.addEventListener('scroll', lift);
   document.addEventListener('pointerdown', unlockAudio, { passive: true }); // audio needs a user gesture first
   document.addEventListener('keydown', unlockAudio);
 

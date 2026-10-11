@@ -71,3 +71,22 @@ export function playDraw(delayMs = 0, flightMs = 650) {
     thump(land, 0.22);
   } catch { /* ignore audio glitches */ }
 }
+
+// Short rising "pop" for an incoming chat message.
+export function playPop() {
+  if (!enabled || !ctx || ctx.state !== 'running') return;
+  try {
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(620, t);
+    o.frequency.exponentialRampToValueAtTime(1240, t + 0.09);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g).connect(ctx.destination);
+    o.start(t);
+    o.stop(t + 0.2);
+  } catch { /* ignore audio glitches */ }
+}

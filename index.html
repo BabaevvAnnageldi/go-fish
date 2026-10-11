@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#17533d">
   <meta name="mobile-web-app-capable" content="yes">
@@ -76,7 +76,9 @@
     <!-- Table -->
     <section id="table" class="screen" hidden>
       <div class="opponent">
-        <div class="player-label"><span id="oppName"></span> <span id="oppCount" class="pill"></span></div>
+        <div class="player-label"><span id="oppName"></span> <span id="oppCount" class="pill"></span>
+          <button id="chatBtn" class="chat-btn" type="button" aria-label="Chat"><span aria-hidden="true">💬</span> <span class="lbl">Chat</span><span id="chatBadge" class="badge" hidden>0</span></button>
+        </div>
         <div id="oppHand" class="opp-hand" aria-hidden="true"></div>
         <div id="oppBooks" class="books" aria-label="Opponent books"></div>
       </div>
@@ -106,12 +108,28 @@
 
   <div id="toast" class="toast" role="status" hidden></div>
 
+  <button id="chatBubble" class="chat-bubble" type="button" hidden></button>
+
+  <section id="chat" class="chat-sheet" role="dialog" aria-modal="false" aria-labelledby="chatTitle" hidden>
+    <header class="chat-head">
+      <h2 id="chatTitle">Chat</h2>
+      <button id="chatClose" class="ghost icon-btn" type="button" aria-label="Close chat"><span aria-hidden="true">✕</span></button>
+    </header>
+    <ol id="chatList" class="chat-list" aria-live="polite"></ol>
+    <div id="chatQuick" class="chat-quick" aria-label="Quick messages"></div>
+    <form id="chatForm" class="chat-form" autocomplete="off">
+      <input id="chatInput" type="text" maxlength="300" placeholder="Message…" enterkeyhint="send" aria-label="Message">
+      <button id="chatSend" class="primary" type="submit">Send</button>
+    </form>
+  </section>
+
   <div id="overlay" class="overlay" hidden>
     <div class="dialog card-panel" role="dialog" aria-modal="true" aria-labelledby="overTitle">
       <h2 id="overTitle"></h2>
       <p id="overScore" class="over-score"></p>
       <div class="dialog-actions">
         <button id="againBtn" class="primary" type="button">Play again</button>
+        <button id="overChatBtn" class="ghost" type="button">💬 Chat</button>
         <button id="overLeaveBtn" class="ghost" type="button">Leave</button>
       </div>
     </div>

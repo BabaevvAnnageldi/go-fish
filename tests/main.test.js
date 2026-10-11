@@ -124,3 +124,92 @@ test("host Leave sends 'bye'; a stranger can't take a disconnected guest's seat"
   $('leaveBtn').click();
   await waitFor(() => A2.msgs.some((m) => m.type === 'bye'), 2000, 'bye');
 });
+
+const submitChat = ($, text) => {
+  $('chatInput').value = text;
+  for (const fn of $('chatForm').listeners.submit ?? []) fn({ preventDefault() {} });
+};
+
+test('chat: host and guest exchange messages; host persists history and replays it on reconnect', async () => {
+  const net = makeNetwork();
+  const { $ } = await boot(net, { local: { 'gofish:client': 'host-client' } });
+  $('nameInput').value = 'Anna';
+  $('createBtn').click();
+  await waitFor(() => $('status').textContent === 'Waiting for opponent', 2000, 'host waiting');
+  const code = $('roomCode').textContent;
+  const join = () => {
+    const rec = { msgs: [] };
+    rec.g = new GuestSession({
+      code, PeerImpl: net.Peer, onStatus() {}, onMessage: (m) => rec.msgs.push(m),
+      onOpen: () => rec.g.send({ type: 'hello', name: 'Mia', clientId: 'mia' }),
+    });
+    rec.g.start();
+    sessions.push(rec.g);
+    return rec;
+  };
+  const G = join();
+  await waitFor(() => G.msgs.some((m) => m.type === 'chat-history'), 2000, 'history on join');
+  assert.deepEqual(G.msgs.find((m) => m.type === 'chat-history').messages, []);
+
+  // Guest -> host: cleaned, numbered, shown as unread + bubble.
+  G.g.send({ type: 'chat', text: '  hi   <b>Anna</b> ' });
+  await waitFor(() => $('chatBadge').textContent === '1', 2000, 'unread badge');
+  assert.equal($('chatBadge').hidden, false);
+  assert.equal($('chatBubble').textContent, 'Mia: hi <b>Anna</b>');
+  await waitFor(() => G.msgs.some((m) => m.type === 'chat'), 2000, 'echo to guest');
+  const echo = G.msgs.find((m) => m.type === 'chat');
+  assert.deepEqual({ id: echo.message.id, from: echo.message.from, text: echo.message.text }, { id: 1, from: 1, text: 'hi <b>Anna</b>' });
+
+  // Junk from the guest is ignored.
+  G.g.send({ type: 'chat', text: '   ' });
+  G.g.send({ type: 'chat', text: { evil: true } });
+
+  // Opening the chat clears unread; host -> guest.
+  $('chatBtn').click();
+  assert.equal($('chatBadge').hidden, true);
+  submitChat($, 'hello back');
+  assert.equal($('chatInput').value, '', 'input cleared after send');
+  await waitFor(() => G.msgs.some((m) => m.type === 'chat' && m.message.from === 0), 2000, 'host message delivered');
+  assert.equal(G.msgs.filter((m) => m.type === 'chat').at(-1).message.text, 'hello back');
+
+  const saved = JSON.parse(localStorage.getItem(`gofish:host:${code}`));
+  assert.deepEqual(saved.chat.map((m) => [m.id, m.from, m.text]), [[1, 1, 'hi <b>Anna</b>'], [2, 0, 'hello back']]);
+
+  // Guest reconnects (e.g. refreshed): gets the full history.
+  G.g.destroy();
+  const G2 = join();
+  await waitFor(() => G2.msgs.some((m) => m.type === 'chat-history'), 2000, 'history on rejoin');
+  assert.deepEqual(G2.msgs.find((m) => m.type === 'chat-history').messages.map((m) => m.text), ['hi <b>Anna</b>', 'hello back']);
+});
+
+test('chat: guest app sends via the form, mirrors host history, and ignores replays', async () => {
+  const net = makeNetwork();
+  const seen = [];
+  let H;
+  H = new HostSession({ code: 'ABCD', PeerImpl: net.Peer, onStatus() {}, onMessage: (m) => {
+    seen.push(m);
+    if (m.type === 'hello') {
+      H.send({ type: 'view', view: { you: 1, seq: 1, names: ['Anna', 'Mia'], hand: ['7H'], oppCount: 7, books: [[], []],
+        stockCount: 38, turn: 0, phase: 'playing', winner: null, options: {}, legal: [], log: [] } });
+      H.send({ type: 'chat-history', messages: [{ id: 1, from: 0, text: 'welcome!', ts: 1 }, { id: 2, from: 9, text: 'bad', ts: 1 }] });
+    }
+  } });
+  H.start();
+  sessions.push(H);
+  await settle();
+  const { $ } = await boot(net, { session: { role: 'guest', code: 'ABCD', name: 'Mia' } });
+  await waitFor(() => seen.some((m) => m.type === 'hello'), 2000, 'hello');
+  await settle(100);
+  assert.equal($('chatBadge').hidden, true, 'history on first join is not counted as unread');
+
+  H.send({ type: 'chat', message: { id: 3, from: 0, text: 'your turn soon', ts: 2 } });
+  await waitFor(() => $('chatBadge').textContent === '1', 2000, 'unread');
+  H.send({ type: 'chat', message: { id: 3, from: 0, text: 'your turn soon', ts: 2 } }); // replay
+  H.send({ type: 'chat', message: { id: 4, from: 0, text: '', ts: 2 } }); // invalid
+  await settle(100);
+  assert.equal($('chatBadge').textContent, '1', 'replayed / invalid messages ignored');
+
+  submitChat($, '  on my way  ');
+  await waitFor(() => seen.some((m) => m.type === 'chat'), 2000, 'guest chat sent');
+  assert.equal(seen.find((m) => m.type === 'chat').text, 'on my way');
+});
