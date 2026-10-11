@@ -8,6 +8,7 @@
   --line: #d5e0db;
   --accent: #f2a93b;
   --accent-ink: #2b1b00;
+  --brand: #1f6b4f;
   --red: #c62f3a;
   --black: #1c1f24;
   --card: #fffdf8;
@@ -25,6 +26,7 @@
     --ink: #e8f0ec;
     --muted: #9db0a7;
     --line: #2b3a33;
+    --brand: #f2a93b;
     --shadow: 0 6px 18px rgba(0, 0, 0, .45);
     color-scheme: dark;
   }
@@ -48,7 +50,10 @@ button:disabled { cursor: not-allowed; opacity: .5; }
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 10px 16px; max-width: 960px; margin: 0 auto;
 }
-.logo { font-size: 1.35rem; margin: 0; letter-spacing: .5px; }
+.logo { display: flex; align-items: center; gap: 9px; margin: 0; }
+.logo-mark { width: 36px; height: 36px; flex: none; filter: drop-shadow(0 2px 4px rgba(10, 40, 28, .25)); }
+.wordmark { font: 700 1.55rem/1 Fredoka, "Avenir Next Rounded", "Arial Rounded MT Bold", system-ui, sans-serif; letter-spacing: .2px; color: var(--ink); }
+.wordmark b { font-weight: inherit; color: var(--brand); }
 .topbar-right { display: flex; align-items: center; gap: 8px; }
 .status { font-size: .8rem; padding: 3px 10px; border-radius: 999px; background: var(--line); }
 .status.ok { background: #cfeedd; color: #135235; }
@@ -211,7 +216,8 @@ body.playing .log { max-height: none; flex: 1; min-height: 0; }
 
 @media (max-width: 520px) {
   .topbar { padding: 6px 10px; }
-  .logo { font-size: 1.1rem; }
+  .logo-mark { width: 30px; height: 30px; }
+  .wordmark { font-size: 1.3rem; }
   .icon-btn .lbl { display: none; }
   .icon-btn { width: 38px; height: 38px; padding: 0; font-size: 1.05rem; }
   .status { font-size: .72rem; padding: 2px 8px; }
@@ -231,8 +237,7 @@ body.playing .log { max-height: none; flex: 1; min-height: 0; }
 }
 /* Narrow phones: keep just the fish logo while playing so the buttons fit */
 @media (max-width: 420px) {
-  body.playing .logo { font-size: 0; }
-  body.playing .logo span { font-size: 1.4rem; }
+  body.playing .wordmark { display: none; }
   .topbar-right { gap: 6px; }
 }
 /* Phone held sideways: shrink everything to fit the short screen */

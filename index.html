@@ -13,14 +13,18 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="description" content="Play Go Fish online with a friend — two players, one room code, no sign-up.">
   <title>Go Fish</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
+  <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js" defer></script>
   <script type="module" src="src/main.js"></script>
 </head>
 <body>
   <header class="topbar">
-    <h1 class="logo"><span aria-hidden="true">🐟</span> Go Fish</h1>
+    <h1 class="logo"><img class="logo-mark" src="icons/logo.svg" alt="" width="36" height="36"><span class="wordmark">Go <b>Fish</b></span></h1>
     <div class="topbar-right">
       <span id="status" class="status" hidden></span>
       <button id="soundBtn" class="ghost icon-btn" type="button" aria-label="Sound" aria-pressed="true"><span id="soundIcon" aria-hidden="true">🔊</span><span class="lbl">Sound</span></button>
