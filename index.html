@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Play Go Fish online with a friend — two players, one room code, no sign-up.">
+  <title>Go Fish</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js" defer></script>
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="logo"><span aria-hidden="true">🐟</span> Go Fish</h1>
+    <div class="topbar-right">
+      <span id="status" class="status" hidden></span>
+      <button id="rulesBtn" class="ghost" type="button">Rules</button>
+      <button id="leaveBtn" class="ghost" type="button" hidden>Leave</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <!-- Lobby -->
+    <section id="lobby" class="screen card-panel">
+      <p class="tagline">A two-player card game. Make the most books of four to win.</p>
+      <label class="field">
+        <span>Your name</span>
+        <input id="nameInput" maxlength="20" autocomplete="nickname" placeholder="e.g. Anna">
+      </label>
+      <div class="lobby-grid">
+        <div class="lobby-box">
+          <h2>Start a game</h2>
+          <label class="check"><input type="checkbox" id="wishInput"> “Fish your wish” house rule</label>
+          <button id="createBtn" class="primary" type="button">Create game</button>
+        </div>
+        <div class="lobby-box">
+          <h2>Join a game</h2>
+          <label class="field">
+            <span>Room code</span>
+            <input id="codeInput" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" class="code-input">
+          </label>
+          <button id="joinBtn" class="primary" type="button">Join game</button>
+        </div>
+      </div>
+      <p id="lobbyError" class="error" role="alert" hidden></p>
+    </section>
+
+    <!-- Waiting room / connecting -->
+    <section id="waiting" class="screen card-panel" hidden>
+      <h2 id="waitingTitle">Waiting for your opponent…</h2>
+      <div id="hostInfo">
+        <p>Share this code:</p>
+        <div id="roomCode" class="room-code"></div>
+        <button id="copyBtn" class="primary" type="button">Copy invite link</button>
+        <p id="inviteLink" class="invite-link"></p>
+      </div>
+      <p id="waitingNote" class="muted"></p>
+      <div class="spinner" aria-hidden="true">🐟</div>
+    </section>
+
+    <!-- Table -->
+    <section id="table" class="screen" hidden>
+      <div class="opponent">
+        <div class="player-label"><span id="oppName"></span> <span id="oppCount" class="pill"></span></div>
+        <div id="oppHand" class="opp-hand" aria-hidden="true"></div>
+        <div id="oppBooks" class="books" aria-label="Opponent books"></div>
+      </div>
+
+      <div class="middle">
+        <div class="pond" aria-label="Pond">
+          <div class="card back pond-card"></div>
+          <div class="pond-count"><strong id="stockCount">0</strong> in the pond</div>
+        </div>
+        <div class="turn-box">
+          <div id="turnText" class="turn-text"></div>
+          <ol id="log" class="log" aria-live="polite"></ol>
+        </div>
+      </div>
+
+      <div class="me">
+        <div id="myBooks" class="books" aria-label="Your books"></div>
+        <div class="ask-bar">
+          <span id="hint" class="muted"></span>
+          <button id="askBtn" class="primary" type="button" disabled>Ask</button>
+        </div>
+        <div id="myHand" class="hand" role="group" aria-label="Your hand"></div>
+        <div class="player-label"><span id="myName"></span> <span class="pill" id="score"></span></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <div id="overlay" class="overlay" hidden>
+    <div class="dialog card-panel" role="dialog" aria-modal="true" aria-labelledby="overTitle">
+      <h2 id="overTitle"></h2>
+      <p id="overScore" class="over-score"></p>
+      <div class="dialog-actions">
+        <button id="againBtn" class="primary" type="button">Play again</button>
+        <button id="overLeaveBtn" class="ghost" type="button">Leave</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rules" class="overlay" hidden>
+    <div class="dialog card-panel rules" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+      <h2 id="rulesTitle">How to play</h2>
+      <ol>
+        <li>Each player gets <b>7 cards</b>. The rest form the <b>pond</b>.</li>
+        <li>On your turn, pick a rank you hold and ask your opponent for it.</li>
+        <li>If they have any, they give you <b>all</b> of them and you <b>go again</b>.</li>
+        <li>If not — <b>“Go fish!”</b> Draw a card from the pond; your turn ends.</li>
+        <li>Collect all four cards of a rank to make a <b>book</b>. Making a book lets you play again.</li>
+        <li>If your hand is empty, you automatically draw from the pond.</li>
+        <li>When all 13 books are made, whoever has the <b>most books wins</b>.</li>
+      </ol>
+      <p class="muted">House rule “Fish your wish”: if you draw the rank you asked for, show it and go again.</p>
+      <div class="dialog-actions"><button id="rulesClose" class="primary" type="button">Got it</button></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "go-fish",
+  "version": "1.0.0",
+  "description": "Two-player online Go Fish card game (peer-to-peer, static site)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "start": "python3 -m http.server 8080"
+  },
+  "license": "MIT"
+}
