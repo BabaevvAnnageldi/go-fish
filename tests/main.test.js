@@ -213,3 +213,37 @@ test('chat: guest app sends via the form, mirrors host history, and ignores repl
   await waitFor(() => seen.some((m) => m.type === 'chat'), 2000, 'guest chat sent');
   assert.equal(seen.find((m) => m.type === 'chat').text, 'on my way');
 });
+
+test('ping: guest answers pings, measures its own round trip and shows it; Leave hides it', async () => {
+  const net = makeNetwork();
+  const seen = [];
+  let H;
+  H = new HostSession({ code: 'ABCD', PeerImpl: net.Peer, onStatus() {}, onMessage: (m) => {
+    seen.push(m);
+    if (m.type === 'ping') setTimeout(() => H.send({ type: 'pong', t: m.t }), 40); // ~40 ms "network"
+  } });
+  H.start();
+  sessions.push(H);
+  await settle();
+  const { $ } = await boot(net, { session: { role: 'guest', code: 'ABCD', name: 'Mia' } });
+  await waitFor(() => seen.some((m) => m.type === 'ping'), 2000, 'guest pings soon after connecting');
+  assert.equal(typeof seen.find((m) => m.type === 'ping').t, 'number');
+  await waitFor(() => $('ping').hidden === false, 2000, 'ping shown');
+  const ms = Number($('ping').textContent.match(/^📶 (\d+) ms$/)?.[1]);
+  assert.ok(ms >= 35 && ms < 1000, `plausible rtt, got ${$('ping').textContent}`);
+  assert.match($('ping').className, /\bgood\b/);
+
+  // Host pings the guest: guest echoes the same timestamp back.
+  H.send({ type: 'ping', t: 12345.5 });
+  await waitFor(() => seen.some((m) => m.type === 'pong'), 2000, 'pong');
+  assert.equal(seen.find((m) => m.type === 'pong').t, 12345.5);
+
+  // Garbage pongs are ignored.
+  H.send({ type: 'pong', t: 'soon' });
+  H.send({ type: 'pong', t: -1e9 });
+  await settle(100);
+  assert.match($('ping').textContent, /^📶 \d+ ms$/);
+
+  $('leaveBtn').click();
+  assert.equal($('ping').hidden, true, 'hidden after leaving');
+});

@@ -3,6 +3,7 @@ import { HostSession, GuestSession, randomCode, normalizeCode } from './net.js';
 import { canSeat, seatId } from './seat.js';
 import { $, showScreen, showToast, setStatus, renderTable, resetHandMemory, rankName } from './ui.js';
 import { soundOn, setSound, unlock as unlockAudio, playPop } from './sound.js';
+import { median, addSample, pingQuality, PING_EVERY_MS, STALE_MS } from './ping.js';
 import { cleanText, isValidMessage, makeMessage, appendMessage, renderChat, renderQuick } from './chat.js';
 import { animateDraws, buzz, canFullscreen, enterFullscreen, exitFullscreen, isFullscreen, isPhone, isStandalone, keepAwake } from './fx.js';
 
@@ -40,6 +41,9 @@ let chat = [];           // chat history (host is authoritative, guest mirrors i
 let chatOpen = false;
 let unread = 0;
 let bubbleTimer = null;
+let pingTimer = null;
+let rtts = [];         // recent round-trip samples to the opponent (ms)
+let lastPong = 0;
 let myClientId = null;   // cached so it stays stable for the page even if localStorage throws
 
 // ---------- Rendering ----------
@@ -88,6 +92,8 @@ function onStatus(s) {
   if (session?.role === 'host' && (s === 'waiting' || s === 'connected')) reclaiming = true; // code may already be shared
   const [text, tone] = STATUS[s] ?? [s, ''];
   setStatus(text, tone);
+  if (s === 'connected') setTimeout(sendPing, 300);
+  showPing();
   if (s === 'host-missing' && !view) {
     $('waitingTitle').textContent = 'Looking for that game…';
     $('waitingNote').textContent = `Make sure your opponent created room ${session.code} and keeps the page open.`;
@@ -111,6 +117,7 @@ function startHost(resume) {
     if (saved?.game) ({ game, guestId = null } = saved);
     if (Array.isArray(saved?.chat)) chat = saved.chat.filter(isValidMessage);
   }
+  startPing();
   net = new HostSession({ code: session.code, onMessage: onGuestMessage, onStatus, canSeat: (hello) => canSeat(guestId, hello) });
   net.start();
   if (game) setView(viewFor(game, 0));
@@ -155,6 +162,10 @@ function onGuestMessage(msg) {
     act(1, msg.rank);
   } else if (msg.type === 'rematch') {
     if (game?.phase === 'over') rematch();
+  } else if (msg.type === 'ping') {
+    net.send({ type: 'pong', t: msg.t });
+  } else if (msg.type === 'pong') {
+    onPong(msg.t);
   } else if (msg.type === 'chat') {
     const text = cleanText(msg.text);
     if (text && game) hostPost(1, text);
@@ -218,6 +229,7 @@ function startGuest() {
   $('hostInfo').hidden = true;
   $('waitingTitle').textContent = `Joining room ${session.code}…`;
   $('waitingNote').textContent = '';
+  startPing();
   net = new GuestSession({
     code: session.code,
     onStatus,
@@ -227,6 +239,10 @@ function startGuest() {
       if (msg.type === 'view' && msg.view && Array.isArray(msg.view.hand)) {
         if (view && msg.view.seq < view.seq) { lastSeq = 0; resetHandMemory(); } // rematch started
         setView(msg.view);
+      } else if (msg.type === 'ping') {
+        net.send({ type: 'pong', t: msg.t });
+      } else if (msg.type === 'pong') {
+        onPong(msg.t);
       } else if (msg.type === 'chat-history' && Array.isArray(msg.messages)) {
         const lastId = chat.at(-1)?.id ?? 0;
         chat = msg.messages.filter(isValidMessage).slice(-100);
@@ -245,6 +261,7 @@ function startGuest() {
       } else if (msg.type === 'bye') {
         // Host left: stop retrying, forget the room, and leave the way back (Leave button) open.
         net.destroy();
+        stopPing();
         store.del('sessionStorage', SESSION_KEY);
         setStatus('Opponent left', 'bad');
         showToast(`${view?.names[0] ?? 'Your opponent'} left the game`, 'info');
@@ -269,6 +286,49 @@ function askSelected() {
 function playAgain() {
   if (session.role === 'host') rematch();
   else net.send({ type: 'rematch' });
+}
+
+// ---------- Ping ----------
+
+const now = () => globalThis.performance?.now() ?? Date.now();
+
+function sendPing() {
+  if (net?.conn?.open) net.send({ type: 'ping', t: now() });
+  showPing();
+}
+
+function startPing() {
+  clearInterval(pingTimer);
+  pingTimer = setInterval(sendPing, PING_EVERY_MS);
+  pingTimer.unref?.(); // Node (tests): don't keep the process alive
+}
+
+function stopPing() {
+  clearInterval(pingTimer);
+  pingTimer = null;
+  rtts = [];
+  lastPong = 0;
+  showPing();
+}
+
+function onPong(t) {
+  if (typeof t !== 'number') return;
+  const rtt = now() - t;
+  const next = addSample(rtts, rtt);
+  if (next === rtts) return;
+  rtts = next;
+  lastPong = now();
+  showPing();
+}
+
+function showPing() {
+  const el = $('ping');
+  const live = Boolean(net?.conn?.open) && rtts.length > 0 && now() - lastPong < STALE_MS;
+  el.hidden = !live;
+  if (!live) return;
+  const ms = Math.round(median(rtts));
+  el.textContent = `📶 ${ms} ms`;
+  el.className = `pill ping ${pingQuality(ms)}`;
 }
 
 // ---------- Chat ----------
@@ -377,6 +437,7 @@ function leave() {
   chat = [];
   unread = 0;
   closeChat();
+  stopPing();
   $('overlay').hidden = true;
   setStatus(null);
   showScreen('lobby');

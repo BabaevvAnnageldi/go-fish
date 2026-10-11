@@ -237,6 +237,14 @@ body.playing .log { max-height: none; flex: 1; min-height: 0; }
   .log { font-size: .8rem; }
   .opp-hand { min-height: 50px; overflow: hidden; }
 }
+/* Ping indicator */
+.ping { font-variant-numeric: tabular-nums; white-space: nowrap; }
+#oppName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill { white-space: nowrap; }
+.ping.good { color: #b9f0d2; }
+.ping.fair { color: #ffe08a; }
+.ping.poor { color: #ffb4b4; background: rgba(198, 47, 58, .35); }
+
 /* Chat */
 .chat-btn {
   margin-left: auto; position: relative; display: inline-flex; align-items: center; gap: 4px;
