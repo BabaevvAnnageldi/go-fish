@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#17533d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Go Fish">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="description" content="Play Go Fish online with a friend — two players, one room code, no sign-up.">
   <title>Go Fish</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐟</text></svg>">
@@ -16,8 +23,9 @@
     <h1 class="logo"><span aria-hidden="true">🐟</span> Go Fish</h1>
     <div class="topbar-right">
       <span id="status" class="status" hidden></span>
-      <button id="rulesBtn" class="ghost" type="button">Rules</button>
-      <button id="leaveBtn" class="ghost" type="button" hidden>Leave</button>
+      <button id="fsBtn" class="ghost icon-btn" type="button" aria-label="Full screen"><span aria-hidden="true">⛶</span><span class="lbl">Full screen</span></button>
+      <button id="rulesBtn" class="ghost icon-btn" type="button" aria-label="Rules"><span aria-hidden="true">?</span><span class="lbl">Rules</span></button>
+      <button id="leaveBtn" class="ghost icon-btn" type="button" aria-label="Leave" hidden><span aria-hidden="true">✕</span><span class="lbl">Leave</span></button>
     </div>
   </header>
 
@@ -101,6 +109,19 @@
         <button id="againBtn" class="primary" type="button">Play again</button>
         <button id="overLeaveBtn" class="ghost" type="button">Leave</button>
       </div>
+    </div>
+  </div>
+
+  <div id="install" class="overlay" hidden>
+    <div class="dialog card-panel rules" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+      <h2 id="installTitle">Play full screen</h2>
+      <p>This browser doesn't support a full-screen button. Add Go Fish to your home screen instead:</p>
+      <ol>
+        <li><b>iPhone / iPad (Safari):</b> tap the <b>Share</b> button <span aria-hidden="true">⬆︎</span>, then <b>Add to Home Screen</b>.</li>
+        <li><b>Android (Chrome):</b> tap the <b>⋮</b> menu, then <b>Add to Home screen</b> / <b>Install app</b>.</li>
+      </ol>
+      <p class="muted">Then open Go Fish from its new icon. It runs full screen, like an app.</p>
+      <div class="dialog-actions"><button id="installClose" class="primary" type="button">Got it</button></div>
     </div>
   </div>
 

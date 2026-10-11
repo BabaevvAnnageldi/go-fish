@@ -71,6 +71,7 @@ export function cardEl(card, arrive) {
   const red = s === 'H' || s === 'D';
   const n = el('div', `card${red ? ' red' : ''}${arrive ? ' arrive' : ''}`);
   n.setAttribute('aria-label', cardName(card));
+  n.setAttribute('data-card', card);
   const corner = (cls) => {
     const c = el('span', cls, r);
     c.append(el('small', null, SUIT_SYMBOL[s]));
@@ -102,6 +103,7 @@ let toastTimer = null;
 export function showScreen(name) {
   for (const id of ['lobby', 'waiting', 'table']) $(id).hidden = id !== name;
   $('leaveBtn').hidden = name === 'lobby';
+  document.body?.classList?.toggle('playing', name === 'table');
 }
 
 export function showToast(text, kind = '') {

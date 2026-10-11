@@ -2,6 +2,7 @@ import { createGame, applyAction, viewFor, GameError, RANKS } from './engine.js'
 import { HostSession, GuestSession, randomCode, normalizeCode } from './net.js';
 import { canSeat, seatId } from './seat.js';
 import { $, showScreen, showToast, setStatus, renderTable, resetHandMemory, rankName } from './ui.js';
+import { animateDraws, buzz, canFullscreen, enterFullscreen, exitFullscreen, isFullscreen, isPhone, isStandalone, keepAwake } from './fx.js';
 
 const SESSION_KEY = 'gofish:session';
 const NAME_KEY = 'gofish:name';
@@ -42,6 +43,7 @@ function render() {
   showScreen('table');
   if (selected && !view.legal.includes(selected)) selected = null;
   renderTable(view, { selected, onSelect: (r) => { selected = selected === r ? null : r; render(); } });
+  keepAwake(view.phase === 'playing'); // a sleeping phone drops the connection
   announce();
 }
 
@@ -50,6 +52,9 @@ function announce() {
   if (lastSeq === 0) { lastSeq = view.seq; return; }
   lastSeq = view.seq;
   const me = view.you;
+  animateDraws(fresh, me);
+  if (fresh.some((e) => (e.kind === 'turn' && e.player === me) || (e.kind === 'ask' && e.got > 0 && e.player !== me))) buzz();
+  if (view.phase === 'over') return; // the game-over dialog says it all
   const book = fresh.findLast((e) => e.kind === 'book');
   const ask = fresh.findLast((e) => e.kind === 'ask');
   if (book) showToast(`${book.player === me ? 'You' : view.names[book.player]} made a book of ${rankName(book.rank)}!`);
@@ -265,6 +270,7 @@ function begin(role) {
   }
   if (!globalThis.Peer) return lobbyError('Could not load the networking library. Check your connection and reload.');
   session = { role, code, name, fishYourWish: $('wishInput').checked };
+  if (isPhone()) enterFullscreen(); // still inside the tap, which browsers require
   saveSession();
   role === 'host' ? startHost(false) : startGuest();
 }
@@ -280,6 +286,7 @@ function leave() {
   lastSeq = hostRetries = 0;
   reclaiming = false;
   resetHandMemory();
+  keepAwake(false);
   $('overlay').hidden = true;
   setStatus(null);
   showScreen('lobby');
@@ -310,8 +317,15 @@ function boot() {
     }
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') $('rules').hidden = true;
+    if (e.key === 'Escape') $('rules').hidden = $('install').hidden = true;
   });
+  $('fsBtn').hidden = isStandalone();
+  $('fsBtn').addEventListener('click', () => {
+    if (isFullscreen()) exitFullscreen();
+    else if (canFullscreen()) enterFullscreen();
+    else $('install').hidden = false; // iPhone Safari: only Add to Home Screen gives full screen
+  });
+  $('installClose').addEventListener('click', () => { $('install').hidden = true; });
 
   const saved = store.get('sessionStorage', SESSION_KEY);
   if (saved?.code && (saved.role === 'host' || saved.role === 'guest')) {
