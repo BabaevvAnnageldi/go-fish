@@ -229,6 +229,12 @@ body.playing .log { max-height: none; flex: 1; min-height: 0; }
   .log { font-size: .8rem; }
   .opp-hand { min-height: 50px; overflow: hidden; }
 }
+/* Narrow phones: keep just the fish logo while playing so the buttons fit */
+@media (max-width: 420px) {
+  body.playing .logo { font-size: 0; }
+  body.playing .logo span { font-size: 1.4rem; }
+  .topbar-right { gap: 6px; }
+}
 /* Phone held sideways: shrink everything to fit the short screen */
 @media (max-height: 520px) and (orientation: landscape) {
   .card { width: 46px; height: 66px; --pip: 10px; }

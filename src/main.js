@@ -2,6 +2,7 @@ import { createGame, applyAction, viewFor, GameError, RANKS } from './engine.js'
 import { HostSession, GuestSession, randomCode, normalizeCode } from './net.js';
 import { canSeat, seatId } from './seat.js';
 import { $, showScreen, showToast, setStatus, renderTable, resetHandMemory, rankName } from './ui.js';
+import { soundOn, setSound, unlock as unlockAudio } from './sound.js';
 import { animateDraws, buzz, canFullscreen, enterFullscreen, exitFullscreen, isFullscreen, isPhone, isStandalone, keepAwake } from './fx.js';
 
 const SESSION_KEY = 'gofish:session';
@@ -326,6 +327,14 @@ function boot() {
     else $('install').hidden = false; // iPhone Safari: only Add to Home Screen gives full screen
   });
   $('installClose').addEventListener('click', () => { $('install').hidden = true; });
+  const showSound = () => {
+    $('soundIcon').textContent = soundOn() ? '🔊' : '🔇';
+    $('soundBtn').setAttribute('aria-pressed', String(soundOn()));
+  };
+  showSound();
+  $('soundBtn').addEventListener('click', () => { setSound(!soundOn()); showSound(); });
+  document.addEventListener('pointerdown', unlockAudio, { passive: true }); // audio needs a user gesture first
+  document.addEventListener('keydown', unlockAudio);
 
   const saved = store.get('sessionStorage', SESSION_KEY);
   if (saved?.code && (saved.role === 'host' || saved.role === 'guest')) {

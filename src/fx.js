@@ -2,10 +2,12 @@
 // still works (and tests still run) where something isn't supported.
 
 import { cardEl } from './ui.js';
+import { playDraw } from './sound.js';
 
 const doc = () => globalThis.document;
 const reducedMotion = () => Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 const hasRect = (n) => typeof n?.getBoundingClientRect === 'function';
+const FLIGHT_MS = 650;
 
 // ---------- Card flying from the pond ----------
 
@@ -39,7 +41,7 @@ function flyFromPond(target, faceCard, delay) {
   const dx = from.left + from.width / 2 - (to.left + to.width / 2);
   const dy = from.top + from.height / 2 - (to.top + to.height / 2);
   const s = from.width / to.width;
-  const duration = 650;
+  const duration = FLIGHT_MS;
   const timing = { duration, delay, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'both' };
   const move = flyer.animate([
     { transform: `translate(${dx}px, ${dy}px) scale(${s})` },
@@ -59,11 +61,13 @@ function flyFromPond(target, faceCard, delay) {
 
 // Play a draw animation for each pond draw among `entries` (fresh engine log entries).
 export function animateDraws(entries, you) {
-  if (reducedMotion()) return;
   const d = doc();
+  const still = reducedMotion();
   const draws = entries.filter((e) => e.kind === 'fish' || e.kind === 'refill');
   draws.forEach((e, i) => {
     const delay = 250 + i * 450;
+    playDraw(delay, still ? 0 : FLIGHT_MS);
+    if (still) return;
     if (e.player === you) {
       // Your card lands on its spot in your hand (or on your books if it completed one).
       const target = (e.card && d.querySelector(`#myHand [data-card="${e.card}"]`)) || d.querySelector('#myBooks .book:last-child');
