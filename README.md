@@ -1,4 +1,4 @@
-# 🐟 Go Fish — Online for Two
+# Go Fish — Online for Two
 
 A browser-based Go Fish card game for two people on different devices. You don't need to sign up or install anything, and there's no server: the two browsers connect directly to each other over WebRTC.
 
@@ -21,12 +21,12 @@ A browser-based Go Fish card game for two people on different devices. You don't
 If someone refreshes or briefly loses connection, the game resumes. The host's browser keeps the game state, so the host should keep their tab open.
 
 ## Features
-- 🃏 Real playing cards with suit pips and court-card faces
-- 🎬 Card-draw animation from the pond, with synthesized sound effects (toggle with 🔊)
-- 💬 In-game chat with quick emoji replies; history survives a refresh
-- 📶 Live ping indicator (green under 150 ms, amber under 300 ms, red above)
-- 📱 Built for phones: full-screen button, installable to your home screen (PWA), and the screen stays awake while you play
-- 🌙 Light and dark mode
+- Real playing cards with suit pips and court-card faces
+- Card-draw animation from the pond, with synthesized sound effects (toggle with the Sound button)
+- In-game chat with quick emoji replies; history survives a refresh
+- Live ping indicator (green under 150 ms, amber under 300 ms, red above)
+- Built for phones: full-screen button, installable to your home screen (PWA), and the screen stays awake while you play
+- Light and dark mode
 
 ## Rules
 These are the official [Bicycle Cards](https://bicyclecards.com/how-to-play/go-fish) rules for two players:
