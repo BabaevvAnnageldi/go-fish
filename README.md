@@ -11,6 +11,14 @@ A browser-based Go Fish card game for two people on different devices. You don't
 
 If someone refreshes or briefly loses connection, the game resumes. The host's browser keeps the game state, so the host should keep their tab open.
 
+## Features
+- 🃏 Real playing cards with suit pips and court-card faces
+- 🎬 Card-draw animation from the pond, with synthesized sound effects (toggle with 🔊)
+- 💬 In-game chat with quick emoji replies; history survives a refresh
+- 📶 Live ping indicator (green under 150 ms, amber under 300 ms, red above)
+- 📱 Built for phones: full-screen button, installable to your home screen (PWA), and the screen stays awake while you play
+- 🌙 Light and dark mode
+
 ## Rules
 These are the official [Bicycle Cards](https://bicyclecards.com/how-to-play/go-fish) rules for two players:
 
@@ -31,8 +39,13 @@ src/engine.js     pure deterministic rules engine (seeded RNG, immutable updates
 src/net.js        PeerJS host/guest sessions (host-authoritative, reconnect)
 src/seat.js       guest-seat policy (only the first guest's clientId may retake the seat)
 src/ui.js         DOM rendering (textContent only, so names can't inject HTML)
-src/main.js       app controller: lobby, host/guest flows, persistence, rematch
-tests/            node:test suites (rules, 5k-game simulations, networking with a fake peer, static checks)
+src/fx.js         card-flight animation, vibration, full screen, wake lock
+src/sound.js      Web Audio sound effects (no audio files)
+src/chat.js       chat messages: validation, history, rendering
+src/ping.js       round-trip-time samples and quality rating
+src/main.js       app controller: lobby, host/guest flows, persistence, rematch, chat, ping
+icons/            logo and app icons; manifest.webmanifest makes it installable
+tests/            node:test suites (rules, 6k-game simulations, networking with a fake peer, UI integration, chat, ping, static checks)
 docs/PROMPT.md    the full build spec
 .claude/agents/   the debugger and tester agents used to verify this project
 ```
