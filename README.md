@@ -4,6 +4,15 @@ A browser-based Go Fish card game for two people on different devices. You don't
 
 **Play:** https://babaevvannageldi.github.io/go-fish/
 
+## Screenshots
+| Lobby | Your turn | Drawing from the pond |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/lobby.png" width="240" alt="Lobby"> | <img src="docs/screenshots/table.png" width="240" alt="Game table"> | <img src="docs/screenshots/draw.png" width="240" alt="Card flying from the pond"> |
+
+| Chat | Game over |
+|:---:|:---:|
+| <img src="docs/screenshots/chat.png" width="240" alt="In-game chat"> | <img src="docs/screenshots/game-over.png" width="240" alt="Game over screen"> |
+
 ## How to start a game
 1. Player 1 opens the site, enters a name, and taps **Create game**. A 4-letter room code appears.
 2. Player 1 taps **Copy invite link** and sends it to Player 2. Player 2 can also open the site and type the code.
@@ -30,6 +39,21 @@ These are the official [Bicycle Cards](https://bicyclecards.com/how-to-play/go-f
 - **Empty hand:** if your hand is empty, you draw from the pond automatically.
 - **Winning:** when all 13 books are made, the player with the most books wins.
 - **Optional house rule, "Fish your wish":** if you draw the rank you asked for, you show it and go again.
+
+## Technologies
+| Area | Technology |
+|---|---|
+| Language | Vanilla **JavaScript** (ES modules), **HTML5**, **CSS3**, no framework and no build step |
+| Multiplayer | **WebRTC** data channels via **[PeerJS](https://peerjs.com/)** 1.5.5 (peer-to-peer), with Google/Cloudflare **STUN** servers |
+| Animation | **Web Animations API** (card flight and 3D flip), CSS transitions |
+| Sound | **Web Audio API**: every sound is synthesized in code, with no audio files |
+| Mobile | **Fullscreen API**, **Screen Wake Lock API**, **Vibration API**, `visualViewport`, safe-area insets |
+| App install | **PWA** web app manifest and icons (add to home screen, full screen) |
+| Storage | `localStorage` / `sessionStorage`, so a game survives a refresh |
+| Graphics | Hand-made **SVG** logo, CSS-drawn cards and pips, **[Fredoka](https://fonts.google.com/specimen/Fredoka)** font |
+| Testing | Node.js built-in test runner (`node:test`): 83 tests, including 6,000 simulated games. Real two-browser end-to-end runs with **Puppeteer** + Chrome |
+| Hosting | **GitHub Pages** (free, static) |
+| AI tooling | Built with **Claude Code**, using custom debugger and tester agents (`.claude/agents/`) |
 
 ## Architecture
 ```
